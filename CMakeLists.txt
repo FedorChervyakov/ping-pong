@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(PingPong)
+project(PingPong VERSION 1.0)
 
 # Find the GCC path
 execute_process(
@@ -10,5 +10,11 @@ execute_process(
 
 set(CMAKE_C_COMPILER ${GCC_PATH})
 
+configure_file(pingpong.h.in pingpong.h)
+
 add_executable(pp-server server.c)
 add_executable(pp-client client.c)
+
+target_include_directories(pp-server PUBLIC
+                           "${PROJECT_BINARY_DIR}"
+                           )

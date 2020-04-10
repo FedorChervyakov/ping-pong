@@ -1,0 +1,11 @@
+/* 
+ * Common header for both server and client of the ping-pong project
+ */
+
+#ifndef __PINGPONG_H_
+#define __PINGPONG_H_
+
+#define VERSION_MAJOR @PingPong_VERSION_MAJOR@
+#define VERSION_MINOR @PingPong_VERSION_MINOR@
+
+#endif
