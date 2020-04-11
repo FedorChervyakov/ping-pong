@@ -2,25 +2,44 @@
  * Server-side of ping-pong project
  */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "pingpong.h"
 
 
+#define PROGRAM_NAME "pp-server"
+
+#define OPTIONS "hv"
+
 static char *filename;
+
+static void version (void);
+static void usage (void);
+static void parse_options (int argc, char **argv);
+int main (int argc, char **argv);
+
 
 static void
 version (void)
 {
-    printf("pp-server: version %d.%d \n", VERSION_MAJOR, VERSION_MINOR);
+    printf("%s: version %d.%d \n", PROGRAM_NAME, VERSION_MAJOR, VERSION_MINOR);
     return;
 }
 
 static void
-usage  (void)
+usage (void)
 {
-    printf("pp-server: [-hv]\n");
+    printf("%s: usage \n\t./%s [-%s] filename\n",
+           PROGRAM_NAME, OPTIONS, PROGRAM_NAME
+           );
     return;
 }
 
@@ -29,33 +48,51 @@ parse_options (int argc, char **argv)
 {
     int c;
 
-    while ((c = getopt(argc, argv, "hv")) != -1) {
+    while ((c = getopt(argc, argv, OPTIONS)) != -1) {
         switch (c) {
             case 'h':
                 usage();
-                break;
-            case 'v': 
+                exit(EXIT_SUCCESS);
+            case 'v':
                 version();
-                break;
+                exit(EXIT_SUCCESS);
             default:
-                printf("pp-server: Unknown option %s\n", optarg);
+                goto exit_failure;
         }
     }
 
-    if (optind < argc) {
-        printf("non-option ARGV-elements: ");
-        while (optind < argc)
-            printf("%s ", argv[optind++]);
-        printf("\n");
+    if (optind == argc-1) {
+        filename = argv[optind];
+        printf("filename: %s\n", filename);
+    } else if (optind == argc) {
+        printf("%s: missing file operand\n", PROGRAM_NAME);
+        goto exit_failure;
+    } else {
+        printf("%s: two many arguments\n", PROGRAM_NAME);
+        goto exit_failure;
     }
 
     return;
+
+exit_failure:
+    printf("Try './%s -h' for more information.\n", PROGRAM_NAME);
+    exit(EXIT_FAILURE);
 }
+
 
 int
 main (int argc, char **argv)
 {
+    int fd;
+
     parse_options(argc, argv);
 
-    return 0;
+    if ((fd = open(filename, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR)) < 0) {
+        printf("%s: Failed to open %s\n", PROGRAM_NAME, filename);
+        exit(fd);
+    }
+
+    close(fd);
+
+    exit(EXIT_SUCCESS);
 }
