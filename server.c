@@ -20,12 +20,8 @@
 
 #define LISTEN_BACKLOG 5
 
-#define handle_error(msg) \
-    do { perror(msg); exit(EXIT_FAILURE); } while (0)
-
 
 static char *sock_path;
-
 
 static void print_version (void);
 static void print_usage (void);
@@ -90,6 +86,8 @@ main (int argc, char **argv)
 {
     int sfd, cfd;
     struct sockaddr_un my_addr;
+    char *recv_buf;
+    const char *send_buf = PONG;
 
     parse_options(argc, argv);
 
@@ -112,11 +110,22 @@ main (int argc, char **argv)
         handle_error("listen");
 
     /* Accept an incoming connection */
-
     cfd = accept(sfd, NULL, NULL);
     if (cfd == -1)
         handle_error("accept");
 
+    /* Read the message to recv_buf */
+    if (read(cfd, recv_buf, BUF_SIZE) == -1)
+        handle_error("read");
+
+    printf("Received %s\n", recv_buf);
+
+    /* Check if message is PING, and reply with PONG */
+    if (strncmp(PING, recv_buf, strlen(PING)) == 0) {
+        printf("Sending %s\n", send_buf);
+        if (write(cfd, send_buf, strlen(send_buf)) == -1)
+            handle_error("write");
+    }
 
     /* Grace exit */
     if (unlink(sock_path) == -1)

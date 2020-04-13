@@ -5,7 +5,20 @@
 #ifndef __PINGPONG_H_
 #define __PINGPONG_H_
 
+/* Version defines */
 #define VERSION_MAJOR @PingPong_VERSION_MAJOR@
 #define VERSION_MINOR @PingPong_VERSION_MINOR@
+
+/* Control string defines */
+#define PING "ping"
+#define PONG "pong"
+
+/* Receive buffer size */
+#define BUF_SIZE 10
+
+/* Handle error define */
+#define handle_error(msg) \
+    do { perror(msg); exit(EXIT_FAILURE); } while (0)
+
 
 #endif
