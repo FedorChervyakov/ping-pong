@@ -10,8 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
+#include <string.h>
 
 #include "pingpong.h"
 
@@ -20,7 +19,12 @@
 #define OPTIONS "hv"
 
 
-static char *filename;
+#define handle_error(msg) \
+    do { perror(msg); exit(EXIT_FAILURE); } while (0)
+
+
+static char *sock_path;
+
 
 static void print_version (void);
 static void print_usage (void);
@@ -38,8 +42,8 @@ print_version (void)
 static void
 print_usage (void)
 {
-    printf("%s: usage \n\t./%s [-%s] filename\n",
-           PROGRAM_NAME, OPTIONS, PROGRAM_NAME
+    printf("%s: usage \n./%s [-%s] sock_path\n",
+           PROGRAM_NAME, PROGRAM_NAME, OPTIONS
            );
     return;
 }
@@ -63,10 +67,10 @@ parse_options (int argc, char **argv)
     }
 
     if (optind == argc-1) {
-        filename = argv[optind];
-        printf("filename: %s\n", filename);
+        sock_path = argv[optind];
+        printf("sock_path: %s\n", sock_path);
     } else if (optind == argc) {
-        printf("%s: missing file operand\n", PROGRAM_NAME);
+        printf("%s: missing socket path\n", PROGRAM_NAME);
         goto exit_failure;
     } else {
         printf("%s: two many arguments\n", PROGRAM_NAME);
@@ -83,16 +87,29 @@ exit_failure:
 int
 main (int argc, char **argv)
 {
-    int fd;
+    int sfd;
+    struct sockaddr_un server_addr;
 
     parse_options(argc, argv);
 
-    if ((fd = open(filename, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR)) < 0) {
-        printf("%s: Failed to open %s\n", PROGRAM_NAME, filename);
-        exit(errno);
-    }
+    /* Create Unix socket */
+    sfd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sfd == -1)
+        handle_error("socket");
 
-    close(fd);
+    /* Initialize server_addr structure with pathname set to sock_path */
+    memset(&server_addr, 0, sizeof(struct sockaddr_un)); /* clear structure */
+    server_addr.sun_family = AF_UNIX;
+    strncpy(server_addr.sun_path, sock_path, sizeof(server_addr.sun_path)-1);
+
+    /* Attempt connection to a socket binded to path_name */
+    if (connect(sfd, &server_addr, sizeof(struct sockaddr_un)) == -1)
+        handle_error("connect");
+
+    printf("Connected to: %s\n", server_addr.sun_path);
+
+    if (close(sfd) == -1)
+        handle_error("close");
 
     exit(EXIT_SUCCESS);
 }
