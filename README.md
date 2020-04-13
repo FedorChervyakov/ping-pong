@@ -18,8 +18,6 @@ GCC and CMake
 - `read()`
 
 ## Notes
-*headers* and *declarations* are taken straight from manpage corresponding
-to each syscall.
 
 ### Sockets
 #### Accepting connections
@@ -35,44 +33,3 @@ incoming connections are specified with listen().
 ### Other notes
 List open Unix sockets
 `lsof -U`
-
-### Syscalls API
-#### open()
-__headers__
-```c
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-```
-__declarations__
-```c
-int open(const char *pathname, int flags);
-int open(const char *pathname, int flags, mode_t mode);
-
-int creat(const char *pathname, mode_t mode);
-
-int openat(int dirfd, const char *pathname, int flags);
-int openat(int dirfd, const char *pathname, int flags, mode_t mode);
-```
-
-#### socket()
-__headers__
-```c
-#include <sys/types.h>
-#include <sys/socket.h>
-```
-__declaration__
-```c
-int socket(int domain, int type, int protocol);
-```
-
-#### listen()
-__headers__
-```c
-#include <sys/types.h>
-#include <sys/socket.h>
-```
-__declaration__
-```c
-int listen(int sockfd, int backlog);
-```
