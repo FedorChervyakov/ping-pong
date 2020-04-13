@@ -19,12 +19,7 @@
 #define OPTIONS "hv"
 
 
-#define handle_error(msg) \
-    do { perror(msg); exit(EXIT_FAILURE); } while (0)
-
-
 static char *sock_path;
-
 
 static void print_version (void);
 static void print_usage (void);
@@ -89,6 +84,8 @@ main (int argc, char **argv)
 {
     int sfd;
     struct sockaddr_un server_addr;
+    char *recv_buf;
+    const char *send_buf = PING;
 
     parse_options(argc, argv);
 
@@ -107,6 +104,16 @@ main (int argc, char **argv)
         handle_error("connect");
 
     printf("Connected to: %s\n", server_addr.sun_path);
+
+    printf("Sending %s\n", send_buf);
+
+    if (write(sfd, send_buf, strlen(send_buf)) == -1)
+        handle_error("write");
+
+    if (read(sfd, recv_buf, BUF_SIZE) == -1)
+        handle_error("read");
+
+    printf("Received %s\n", recv_buf);
 
     if (close(sfd) == -1)
         handle_error("close");
