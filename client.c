@@ -6,6 +6,9 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/ioctl.h>
+
+#include <linux/sockios.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,7 +66,6 @@ parse_options (int argc, char **argv)
 
     if (optind == argc-1) {
         sock_path = argv[optind];
-        printf("sock_path: %s\n", sock_path);
     } else if (optind == argc) {
         printf("%s: missing socket path\n", PROGRAM_NAME);
         goto exit_failure;
@@ -84,7 +86,9 @@ main (int argc, char **argv)
 {
     int sfd;
     struct sockaddr_un server_addr;
-    char *recv_buf;
+
+    ssize_t read_cnt, write_cnt;
+    char recv_buf[BUF_SIZE];
     const char *send_buf = PING;
 
     parse_options(argc, argv);
@@ -100,18 +104,28 @@ main (int argc, char **argv)
     strncpy(server_addr.sun_path, sock_path, sizeof(server_addr.sun_path)-1);
 
     /* Attempt connection to a socket binded to path_name */
-    if (connect(sfd, &server_addr, sizeof(struct sockaddr_un)) == -1)
+    if (connect(sfd, (struct sockaddr *) &server_addr, sizeof(struct sockaddr_un)) == -1)
         handle_error("connect");
 
-    printf("Connected to: %s\n", server_addr.sun_path);
-
+    write_cnt = 0;
     printf("Sending %s\n", send_buf);
 
-    if (write(sfd, send_buf, strlen(send_buf)) == -1)
-        handle_error("write");
+    while ((write_cnt=write(sfd, send_buf+write_cnt, strlen(send_buf)-write_cnt)) < strlen(send_buf)) {
+        if (write_cnt == -1)
+            handle_error("write");
+    }
 
-    if (read(sfd, recv_buf, BUF_SIZE) == -1)
-        handle_error("read");
+    do {
+        /* Read the message to recv_buf */
+        read_cnt=read(sfd, recv_buf, BUF_SIZE);
+        if (read_cnt == -1)
+            handle_error("read");
+
+        /* Check if there is an unread data in the buffer */
+        if (ioctl(sfd, SIOCINQ, &read_cnt) == -1)
+            handle_error("ioctl");
+
+    } while (read_cnt > 0);
 
     printf("Received %s\n", recv_buf);
 
