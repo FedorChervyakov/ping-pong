@@ -14,7 +14,7 @@
 #define PONG "pong"
 
 /* Receive buffer size */
-#define BUF_SIZE 10
+#define BUF_SIZE 8192
 
 /* Handle error define */
 #define handle_error(msg) \

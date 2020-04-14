@@ -6,6 +6,9 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/ioctl.h>
+
+#include <linux/sockios.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,7 +68,6 @@ parse_options (int argc, char **argv)
 
     if (optind == argc-1) {
         sock_path = argv[optind];
-        printf("sock_path: %s\n", sock_path);
     } else if (optind == argc) {
         printf("%s: missing socket path\n", PROGRAM_NAME);
         goto exit_failure;
@@ -84,9 +86,11 @@ exit_failure:
 int
 main (int argc, char **argv)
 {
-    int sfd, cfd;
+    ssize_t sfd, cfd;
     struct sockaddr_un my_addr;
-    char *recv_buf;
+
+    int read_cnt, write_cnt;
+    char recv_buf[BUF_SIZE];
     const char *send_buf = PONG;
 
     parse_options(argc, argv);
@@ -102,6 +106,7 @@ main (int argc, char **argv)
     strncpy(my_addr.sun_path, sock_path, sizeof(my_addr.sun_path)-1);
 
     /* Bind socket to the address */
+    unlink(my_addr.sun_path);
     if (bind(sfd, (struct sockaddr *) &my_addr, sizeof(struct sockaddr_un)) == -1)
         handle_error("bind");
 
@@ -109,30 +114,45 @@ main (int argc, char **argv)
     if (listen(sfd, LISTEN_BACKLOG) == -1)
         handle_error("listen");
 
+    write_cnt = 0;
+
     /* Accept an incoming connection */
     cfd = accept(sfd, NULL, NULL);
     if (cfd == -1)
         handle_error("accept");
+    
+    do {
+        /* Read the message to recv_buf */
+        read_cnt=read(cfd, recv_buf, BUF_SIZE);
+        if (read_cnt == -1)
+            handle_error("read");
 
-    /* Read the message to recv_buf */
-    if (read(cfd, recv_buf, BUF_SIZE) == -1)
-        handle_error("read");
+        /* Check if there is unread data in the buffer */
+        if (ioctl(cfd, SIOCINQ, &read_cnt) == -1)
+            handle_error("ioctl");
+
+    } while (read_cnt > 0);
 
     printf("Received %s\n", recv_buf);
 
     /* Check if message is PING, and reply with PONG */
     if (strncmp(PING, recv_buf, strlen(PING)) == 0) {
         printf("Sending %s\n", send_buf);
-        if (write(cfd, send_buf, strlen(send_buf)) == -1)
-            handle_error("write");
+        while ((write_cnt=write(cfd, send_buf+write_cnt, strlen(send_buf)-write_cnt)) < strlen(send_buf)) {
+            if (write_cnt == -1)
+                handle_error("write");
+        }
     }
+
+    if (close(cfd) == -1)
+        handle_error("close cfd");
 
     /* Grace exit */
     if (unlink(sock_path) == -1)
         handle_error("unlink");
 
     if (close(sfd) == -1)
-        handle_error("close");
+        handle_error("close sfd");
 
     exit(EXIT_SUCCESS);
 }
