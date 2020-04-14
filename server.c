@@ -14,17 +14,19 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include "pingpong.h"
 
 
 #define PROGRAM_NAME "pp-server"
-#define OPTIONS "hv"
+#define OPTIONS "hvl:"
 
 #define LISTEN_BACKLOG 5
 
 
 static char *sock_path;
+static char *log_path = "log.txt";
 
 static void print_version (void);
 static void print_usage (void);
@@ -42,9 +44,8 @@ print_version (void)
 static void
 print_usage (void)
 {
-    printf("%s: usage \n./%s [-%s] sock_path\n",
-           PROGRAM_NAME, PROGRAM_NAME, OPTIONS
-           );
+    printf("%s: usage \n./%s [-hv] [-l log_path] sock_path\n",
+           PROGRAM_NAME, PROGRAM_NAME);
     return;
 }
 
@@ -61,6 +62,8 @@ parse_options (int argc, char **argv)
             case 'v':
                 print_version();
                 exit(EXIT_SUCCESS);
+            case 'l':
+                log_path = optarg;
             default:
                 goto exit_failure;
         }
@@ -86,14 +89,19 @@ exit_failure:
 int
 main (int argc, char **argv)
 {
-    ssize_t sfd, cfd;
+    int sfd, cfd, log_fd;
     struct sockaddr_un my_addr;
 
-    int read_cnt, write_cnt;
+    ssize_t read_cnt, write_cnt, write_cum;
     char recv_buf[BUF_SIZE];
     const char *send_buf = PONG;
 
     parse_options(argc, argv);
+
+    /* Open log file */
+    log_fd = open(log_path, O_RDWR | O_CREAT | O_APPEND, S_IRWXU);
+    if (log_fd == -1)
+        handle_error("open log");
 
     /* Create Unix socket */
     sfd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -114,8 +122,6 @@ main (int argc, char **argv)
     if (listen(sfd, LISTEN_BACKLOG) == -1)
         handle_error("listen");
 
-    write_cnt = 0;
-
     /* Accept an incoming connection */
     cfd = accept(sfd, NULL, NULL);
     if (cfd == -1)
@@ -135,19 +141,32 @@ main (int argc, char **argv)
 
     printf("Received %s\n", recv_buf);
 
+    write_cnt = write_cum = 0;
+
+    while ((write_cnt=write(log_fd, recv_buf+write_cum, strlen(recv_buf)-write_cum)) < strlen(recv_buf)-write_cum) {
+        if (write_cnt == -1)
+            handle_error("log write");
+        write_cum += write_cnt;
+    }
+
+    write_cnt = write_cum = 0;
+
     /* Check if message is PING, and reply with PONG */
     if (strncmp(PING, recv_buf, strlen(PING)) == 0) {
         printf("Sending %s\n", send_buf);
-        while ((write_cnt=write(cfd, send_buf+write_cnt, strlen(send_buf)-write_cnt)) < strlen(send_buf)) {
+        while ((write_cnt=write(cfd, send_buf+write_cum, strlen(send_buf)-write_cum)) < strlen(send_buf)-write_cum) {
             if (write_cnt == -1)
                 handle_error("write");
+            write_cum += write_cnt;
         }
     }
+
+    if (close(log_fd) == -1)
+        handle_error("log close");
 
     if (close(cfd) == -1)
         handle_error("close cfd");
 
-    /* Grace exit */
     if (unlink(sock_path) == -1)
         handle_error("unlink");
 
