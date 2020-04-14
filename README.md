@@ -1,6 +1,25 @@
 # Ping-Pong
 Basic ping-pong on sockets. Written to practice various syscalls.
 
+## Install
+CMake>=3.10 and GCC are required.
+```
+git clone git@github.com:FedorChervyakov/ping-pong.git
+cd ping-pong
+mkdir build
+cd build
+cmake ..
+make
+```
+
+## Usage
+```
+# From build dir:
+./pp-server some.sock
+# Then, in another terminal:
+./pp-client some.sock
+```
+
 ## Requirements
 Listed below are requirements for the code.
 
@@ -17,19 +36,3 @@ GCC and CMake
 - `write()`
 - `read()`
 
-## Notes
-
-### Sockets
-#### Accepting connections
-To accept connections, the following steps are performed:
-
-1.  A socket is created with socket(2).
-2.  The socket is bound to a local address using bind(2), so that other
-sockets may be connect(2)ed to it.
-3.  A willingness to accept incoming connections and a queue limit for 
-incoming connections are specified with listen().
-4.  Connections are accepted with accept(2).
-
-### Other notes
-List open Unix sockets
-`lsof -U`
