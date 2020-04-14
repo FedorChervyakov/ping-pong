@@ -87,7 +87,7 @@ main (int argc, char **argv)
     int sfd;
     struct sockaddr_un server_addr;
 
-    ssize_t read_cnt, write_cnt;
+    ssize_t read_cnt, write_cnt, write_cum;
     char recv_buf[BUF_SIZE];
     const char *send_buf = PING;
 
@@ -110,9 +110,10 @@ main (int argc, char **argv)
     write_cnt = 0;
     printf("Sending %s\n", send_buf);
 
-    while ((write_cnt=write(sfd, send_buf+write_cnt, strlen(send_buf)-write_cnt)) < strlen(send_buf)) {
+    while ((write_cnt=write(sfd, send_buf+write_cum, strlen(send_buf)-write_cum)) < strlen(send_buf)-write_cum) {
         if (write_cnt == -1)
             handle_error("write");
+        write_cum += write_cnt;
     }
 
     do {
