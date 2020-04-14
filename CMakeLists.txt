@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(PingPong VERSION 1.0)
-
 # Find the GCC path
 execute_process(
     COMMAND bash -c "which gcc | tr -d '\n'"
@@ -9,6 +7,8 @@ execute_process(
 )
 
 set(CMAKE_C_COMPILER ${GCC_PATH})
+
+project(PingPong VERSION 1.0 LANGUAGES C)
 
 configure_file(pingpong.h.in pingpong.h)
 
