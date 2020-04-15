@@ -16,9 +16,12 @@
 /* Receive buffer size */
 #define BUF_SIZE 8192
 
-/* Handle error define */
+/* Handle error macro */
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
+
+/* Default Unix socket pathname */
+#define UNIX_SOCKET_PATH "pingpong.sock"
 
 
 #endif

@@ -15,22 +15,39 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include <getopt.h>
 
 #include "pingpong.h"
 
 
 #define PROGRAM_NAME "pp-server"
-#define OPTIONS "hvl:"
 
 #define LISTEN_BACKLOG 5
 
+static char *short_options = "hvl:u::";
+static struct option long_options[] = {
+    {"log",     required_argument, 0, 'l'},
+    {"unix",    optional_argument, 0, 'u'},
+    {"help",    no_argument,       0, 'h'},
+    {"version", no_argument,       0, 'v'},
+    {0,         0,                 0, 0}
+};
 
-static char *sock_path;
+enum protocol
+{
+    NONE,
+    UNIX,
+};
+
+static enum protocol proto = NONE;
+
+static char unix_sock_path[108] = UNIX_SOCKET_PATH;
 static char *log_path = "log.txt";
 
 static void print_version (void);
 static void print_usage (void);
 static void parse_options (int argc, char **argv);
+static void parse_unix_socket_param (const char *optarg);
 int main (int argc, char **argv);
 
 
@@ -44,9 +61,33 @@ print_version (void)
 static void
 print_usage (void)
 {
-    printf("%s: usage \n./%s [-hv] [-l log_path] sock_path\n",
+    printf("%s: usage \n./%s [-hvu] [-l log_path] [-u sock_path]\n",
            PROGRAM_NAME, PROGRAM_NAME);
+    puts(("\
+\t-h, --help              show this message\n\
+\t-u, --unix [pathname]   use Unix socket, bind it to pathname\n\
+\t-l, --log [pathname]    write log to pathname\n\
+\t-v, --version           show version"));
     return;
+}
+
+
+static void
+parse_unix_socket_param (const char *optarg)
+{
+    char *env_var;
+
+    if (! optarg) {
+        if ((env_var = getenv("UNIX_SOCKET")) != NULL) {
+            /* Use env var if set */
+            strcpy(unix_sock_path, env_var);
+        }
+        return;
+    }
+
+    strcpy(unix_sock_path, optarg);
+    return;
+
 }
 
 static void
@@ -54,7 +95,9 @@ parse_options (int argc, char **argv)
 {
     int c;
 
-    while ((c = getopt(argc, argv, OPTIONS)) != -1) {
+    while ((c = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
+        char *temp_arg = NULL;
+
         switch (c) {
             case 'h':
                 print_usage();
@@ -64,19 +107,27 @@ parse_options (int argc, char **argv)
                 exit(EXIT_SUCCESS);
             case 'l':
                 log_path = optarg;
+                break;
+            case 'u':
+                if (!optarg && NULL != argv[optind] && '-' != argv[optind][0]) {
+                    /* This construct is required to pass optarg
+                     * as -u path or --unix path, instead of
+                     * default getopt_long behavior that is
+                     * -upath or --unix=path.
+                     *
+                     * Test explaination
+                     * No argument is specified, and there is
+                     * another string in argv after this option
+                     * that does not look like an option
+                     */
+                    temp_arg = argv[optind++];
+                }
+                parse_unix_socket_param(temp_arg);
+                proto = UNIX;
+                break;
             default:
                 goto exit_failure;
         }
-    }
-
-    if (optind == argc-1) {
-        sock_path = argv[optind];
-    } else if (optind == argc) {
-        printf("%s: missing socket path\n", PROGRAM_NAME);
-        goto exit_failure;
-    } else {
-        printf("%s: two many arguments\n", PROGRAM_NAME);
-        goto exit_failure;
     }
 
     return;
@@ -98,6 +149,11 @@ main (int argc, char **argv)
 
     parse_options(argc, argv);
 
+    if (proto == NONE) {
+        printf("No protocol specified!\n");
+        exit(EXIT_FAILURE);
+    }
+
     /* Open log file */
     log_fd = open(log_path, O_RDWR | O_CREAT | O_APPEND, S_IRWXU);
     if (log_fd == -1)
@@ -108,10 +164,10 @@ main (int argc, char **argv)
     if (sfd == -1)
         handle_error("socket");
 
-    /* Initialize my_addr structure with pathname set to sock_path */
+    /* Initialize my_addr structure with pathname set to unix_sock_path */
     memset(&my_addr, 0, sizeof(struct sockaddr_un)); /* clear structure */
     my_addr.sun_family = AF_UNIX;
-    strncpy(my_addr.sun_path, sock_path, sizeof(my_addr.sun_path)-1);
+    strncpy(my_addr.sun_path, unix_sock_path, sizeof(my_addr.sun_path)-1);
 
     /* Bind socket to the address */
     unlink(my_addr.sun_path);
@@ -126,7 +182,7 @@ main (int argc, char **argv)
     cfd = accept(sfd, NULL, NULL);
     if (cfd == -1)
         handle_error("accept");
-    
+
     do {
         /* Read the message to recv_buf */
         read_cnt=read(cfd, recv_buf, BUF_SIZE);
@@ -167,7 +223,7 @@ main (int argc, char **argv)
     if (close(cfd) == -1)
         handle_error("close cfd");
 
-    if (unlink(sock_path) == -1)
+    if (unlink(unix_sock_path) == -1)
         handle_error("unlink");
 
     if (close(sfd) == -1)
