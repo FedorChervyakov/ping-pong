@@ -8,7 +8,7 @@ git clone git@github.com:FedorChervyakov/ping-pong.git
 cd ping-pong
 mkdir build
 cd build
-cmake ..
+cmake ../src
 make
 ```
 
