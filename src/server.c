@@ -20,7 +20,7 @@
 #include "pingpong.h"
 
 
-#define PROGRAM_NAME "pp-server"
+#define PROGRAM_NAME "server"
 
 #define LISTEN_BACKLOG 5
 

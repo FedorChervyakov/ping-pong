@@ -19,7 +19,7 @@
 #include "pingpong.h"
 
 
-#define PROGRAM_NAME "pp-client"
+#define PROGRAM_NAME "client"
 
 
 static char *short_options = "hvu::";

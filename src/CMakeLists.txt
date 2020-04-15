@@ -12,14 +12,14 @@ project(PingPong VERSION 1.0 LANGUAGES C)
 
 configure_file(pingpong.h.in pingpong.h)
 
-add_executable(pp-server server.c)
-add_executable(pp-client client.c)
+add_executable(server server.c)
+add_executable(client client.c)
 
-target_include_directories(pp-server
+target_include_directories(server
                            PUBLIC
                            "${PROJECT_BINARY_DIR}"
                            )
-target_include_directories(pp-client
+target_include_directories(client
                            PUBLIC
                            "${PROJECT_BINARY_DIR}"
                            )
