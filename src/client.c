@@ -24,7 +24,7 @@
 #define PROGRAM_NAME "client"
 
 
-static char *short_options = "u::C::hv";
+static char *short_options = "u::C::46hv";
 static struct option long_options[] = {
     {"unix",    optional_argument, 0, 'u'},
     {"connect",  optional_argument, 0, 'C'},
@@ -37,6 +37,7 @@ static int sock_domain, sock_type;
 static char unix_sock_path[108];
 static char hostname[254];
 static char service[16];
+static int ai_family = AF_UNSPEC;
 
 
 static void print_version (void);
@@ -64,6 +65,8 @@ print_usage (void)
 \t-h, --help                show this message\n\
 \t-u, --unix [pathname]     use Unix socket, connect it to pathname\n\
 \t-C, --connect [addr:port] use TCP socket, connect it to addr:port\n\
+\t-4                        force IPv4\n\
+\t-6                        force IPv6\n\
 \t-v, --version             show version"));
     return;
 }
@@ -104,7 +107,7 @@ parse_inet_sock_addr (const char *optarg)
             exit(EXIT_FAILURE);
         }
     } else {
-        strcpy(hostname, "localhost");
+        strcpy(hostname, INET_SOCKET_HOST);
         strcpy(service, INET_SOCKET_PORT);
     }
 
@@ -168,15 +171,38 @@ parse_options (int argc, char **argv)
                 parse_inet_sock_addr(temp_arg);
 
                 break;
+            case '6':
+                if (ai_family != AF_UNSPEC) {
+                    fprintf(stderr, "%s: conficting options specified\n", argv[0]);
+                    goto exit_failure;
+                }
+
+                ai_family = AF_INET6;
+
+                break;
+            case '4':
+                if (ai_family != AF_UNSPEC) {
+                    fprintf(stderr, "%s: conficting options specified\n", argv[0]);
+                    goto exit_failure;
+                }
+
+                ai_family = AF_INET;
+
+                break;
             default:
                 goto exit_failure;
         }
     }
 
+    if (!sock_domain) {
+        fprintf(stderr, "%s: no socket domain specified\n", argv[0]);
+        goto exit_failure;
+    }
+
     return;
 
 exit_failure:
-    fprintf(stderr, "Try './%s -h' for more information.\n", PROGRAM_NAME);
+    fprintf(stderr, "Try '%s -h' for more information.\n", argv[0]);
     exit(EXIT_FAILURE);
 }
 
@@ -244,7 +270,6 @@ main (int argc, char **argv)
                 handle_error("connect");
             break;
         default:
-            fputs(("No protocol specified!\n"), stderr);
             exit(EXIT_FAILURE);
     }
 
