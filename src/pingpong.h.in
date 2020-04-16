@@ -24,7 +24,7 @@
 #define UNIX_SOCKET_PATH "pingpong.sock"
 
 /* Default inet socket hostname and port */
-#define INET_SOCKET_HOST "0.0.0.0"
+#define INET_SOCKET_HOST "*"
 #define INET_SOCKET_PORT "12345"
 
 #endif

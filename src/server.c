@@ -26,7 +26,7 @@
 
 #define LISTEN_BACKLOG 5
 
-static char *short_options = "l:u::L::hv";
+static char *short_options = "l:u::L::46hv";
 static struct option long_options[] = {
     {"log",     required_argument, 0, 'l'},
     {"unix",    optional_argument, 0, 'u'},
@@ -40,6 +40,7 @@ static int sock_domain, sock_type;
 static char unix_sock_path[108];
 static char hostname[254];
 static char service[16];
+static int ai_family = AF_UNSPEC;
 
 static char *log_path = "log.txt";
 
@@ -68,6 +69,8 @@ print_usage (void)
 \t-h, --help               show this message\n\
 \t-u, --unix [pathname]    use Unix socket, bind it to pathname\n\
 \t-L, --listen [addr:port] use TCP socket, bind it to addr:port\n\
+\t-4                       force IPv4\n\
+\t-6                       force IPv6\n\
 \t-l, --log [pathname]     write log to pathname\n\
 \t-v, --version            show version"));
     return;
@@ -176,15 +179,38 @@ parse_options (int argc, char **argv)
                 parse_inet_sock_addr(temp_arg);
 
                 break;
+            case '6':
+                if (ai_family != AF_UNSPEC) {
+                    fprintf(stderr, "%s: conficting options specified\n", argv[0]);
+                    goto exit_failure;
+                }
+
+                ai_family = AF_INET6;
+
+                break;
+            case '4':
+                if (ai_family != AF_UNSPEC) {
+                    fprintf(stderr, "%s: conficting options specified\n", argv[0]);
+                    goto exit_failure;
+                }
+
+                ai_family = AF_INET;
+
+                break;
             default:
                 goto exit_failure;
         }
     }
 
+    if (!sock_domain) {
+        fprintf(stderr, "%s: no socket domain specified\n", argv[0]);
+        goto exit_failure;
+    }
+
     return;
 
 exit_failure:
-    fprintf(stderr, "Try './%s -h' for more information.\n", PROGRAM_NAME);
+    fprintf(stderr, "Try '%s -h' for more information.\n", argv[0]);
     exit(EXIT_FAILURE);
 }
 
@@ -232,7 +258,7 @@ main (int argc, char **argv)
         case AF_INET:
 
             memset(&hints, 0, sizeof(struct addrinfo));
-            hints.ai_family = AF_UNSPEC;
+            hints.ai_family = ai_family;
             hints.ai_socktype = sock_type;
             hints.ai_protocol = 0;
             hints.ai_canonname = NULL;
@@ -259,7 +285,6 @@ main (int argc, char **argv)
                 handle_error("bind");
             break;
         default:
-            fputs(("No protocol specified!\n"), stderr);
             exit(EXIT_FAILURE);
     }
 
