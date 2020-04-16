@@ -8,8 +8,6 @@
 #include <sys/un.h>
 #include <sys/ioctl.h>
 
-#include <linux/sockios.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -190,7 +188,7 @@ main (int argc, char **argv)
             handle_error("read");
 
         /* Check if there is unread data in the buffer */
-        if (ioctl(cfd, SIOCINQ, &read_cnt) == -1)
+        if (ioctl(cfd, FIONREAD, &read_cnt) == -1)
             handle_error("ioctl");
 
     } while (read_cnt > 0);
