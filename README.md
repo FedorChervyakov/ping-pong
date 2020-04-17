@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/FedorChervyakov/ping-pong.svg?branch=travis)](https://travis-ci.org/FedorChervyakov/ping-pong)
+[![Build Status](https://travis-ci.org/FedorChervyakov/ping-pong.svg?branch=dev)](https://travis-ci.org/FedorChervyakov/ping-pong)
 
 # Ping-Pong
 Basic ping-pong on sockets. Written to practice various syscalls.
