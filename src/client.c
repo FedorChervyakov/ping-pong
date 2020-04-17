@@ -129,10 +129,8 @@ parse_options (int argc, char **argv)
                 print_version();
                 exit(EXIT_SUCCESS);
             case 'u':
-                if (sock_domain || sock_type) {
-                    fprintf(stderr, "%s: conficting options specified\n", argv[0]);
-                    goto exit_failure;
-                }
+                if (sock_domain || sock_type)
+                    goto conflicting_options;
 
                 if (!optarg && NULL != argv[optind] && '-' != argv[optind][0]) {
                     /* This construct is required to pass optarg
@@ -155,10 +153,8 @@ parse_options (int argc, char **argv)
 
                 break;
             case 'C':
-                if (sock_domain || sock_type) {
-                    fprintf(stderr, "%s: conficting options specified\n", argv[0]);
-                    goto exit_failure;
-                }
+                if (sock_domain || sock_type)
+                    goto conflicting_options;
 
                 if (!optarg && NULL != argv[optind] && '-' != argv[optind][0]) {
                     /* For the explanation, see the comment in the 'u' case */
@@ -172,22 +168,16 @@ parse_options (int argc, char **argv)
 
                 break;
             case '6':
-                if (ai_family != AF_UNSPEC) {
-                    fprintf(stderr, "%s: conficting options specified\n", argv[0]);
-                    goto exit_failure;
-                }
+                if (ai_family != AF_UNSPEC)
+                    goto conflicting_options;
 
                 ai_family = AF_INET6;
-
                 break;
             case '4':
-                if (ai_family != AF_UNSPEC) {
-                    fprintf(stderr, "%s: conficting options specified\n", argv[0]);
-                    goto exit_failure;
-                }
+                if (ai_family != AF_UNSPEC)
+                    goto conflicting_options;
 
                 ai_family = AF_INET;
-
                 break;
             default:
                 goto exit_failure;
@@ -200,6 +190,10 @@ parse_options (int argc, char **argv)
     }
 
     return;
+
+conflicting_options:
+    fprintf(stderr, "%s: conficting options specified\n", argv[0]);
+    goto exit_failure;
 
 exit_failure:
     fprintf(stderr, "Try '%s -h' for more information.\n", argv[0]);
@@ -228,7 +222,7 @@ main (int argc, char **argv)
     switch (sock_domain) {
         case AF_UNIX:
             /* Initialize unix_addr structure */
-            memset(&unix_addr, 0, sizeof(struct sockaddr_un)); /* clear structure */
+            memset(&unix_addr, 0, sizeof(struct sockaddr_un));
             unix_addr.sun_family = AF_UNIX;
             strncpy(unix_addr.sun_path, unix_sock_path, sizeof(unix_addr.sun_path)-1);
 
@@ -241,9 +235,9 @@ main (int argc, char **argv)
 
             break;
         case AF_INET:
-
+            /* Initialize hints structure */
             memset(&hints, 0, sizeof(struct addrinfo));
-            hints.ai_family = AF_UNSPEC;
+            hints.ai_family = ai_family;
             hints.ai_socktype = sock_type;
             hints.ai_protocol = 0;
             hints.ai_canonname = NULL;
