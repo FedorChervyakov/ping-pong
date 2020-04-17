@@ -1,12 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-# Find the GCC path
-execute_process(
-    COMMAND bash -c "which gcc | tr -d '\n'"
-    OUTPUT_VARIABLE GCC_PATH
-)
-
-set(CMAKE_C_COMPILER ${GCC_PATH})
+set(CMAKE_C_COMPILER gcc)
 
 project(PingPong VERSION 1.0 LANGUAGES C)
 
