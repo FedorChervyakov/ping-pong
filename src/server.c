@@ -304,7 +304,7 @@ main (int argc, char **argv)
 
     } while (read_cnt > 0);
 
-    printf("Received %s\n", recv_buf);
+    printf("%s: Received %s\n", argv[0], recv_buf);
 
     write_cnt = write_cum = 0;
     while ((write_cnt=write(log_fd, recv_buf+write_cum, strlen(recv_buf)-write_cum)) < strlen(recv_buf)-write_cum) {
@@ -317,7 +317,7 @@ main (int argc, char **argv)
     /* Check if message is PING, and reply with PONG */
     write_cnt = write_cum = 0;
     if (strncmp(PING, recv_buf, strlen(PING)) == 0) {
-        printf("Sending %s\n", send_buf);
+        printf("%s: Sending %s\n", argv[0], send_buf);
         while ((write_cnt=send(cfd, send_buf+write_cum, strlen(send_buf)-write_cum, 0)) < strlen(send_buf)-write_cum) {
             if (write_cnt == -1)
                 handle_error("write");
