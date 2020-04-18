@@ -269,7 +269,7 @@ main (int argc, char **argv)
     freeaddrinfo(inet_result);
 
     write_cnt = 0;
-    printf("Sending %s\n", send_buf);
+    printf("%s: Sending %s\n", argv[0], send_buf);
 
     while ((write_cnt=send(sfd, send_buf+write_cum, strlen(send_buf)-write_cum, 0)) < strlen(send_buf)-write_cum) {
         if (write_cnt == -1)
@@ -289,7 +289,7 @@ main (int argc, char **argv)
 
     } while (read_cnt > 0);
 
-    printf("Received %s\n", recv_buf);
+    printf("%s: Received %s\n", argv[0], recv_buf);
 
     if (close(sfd) == -1)
         handle_error("close");
