@@ -15,11 +15,18 @@ make
 ```
 
 ## Usage
+### Unix sockets
 ```
-# From build dir:
-./pp-server some.sock
+./server -u some.sock
 # Then, in another terminal:
-./pp-client some.sock
+./client -u some.sock
+```
+### TCP sockets
+`-4` is used to force IPv4. Use `-6` to force IPv6.
+```
+./server -4 -L '*:12345'
+# Then, in another terminal:
+./client -4 -C 'localhost:12345'
 ```
 
 ## Requirements
