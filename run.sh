@@ -1,5 +1,10 @@
 #!/bin/bash
 
-./server -u SOCKET_PATH &
 
-./client --unix SOCKET_PATH &
+./server -u some.sock &
+spid=$!
+sleep 1
+
+./client --unix some.sock
+
+wait $spid
