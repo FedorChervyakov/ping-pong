@@ -24,4 +24,4 @@ COPY --from=build /app/build/client .
 ENV SOCKET_PATH /tmp/socket.sock
 ENV LOG_PATH /log/pingpong.log
 
-CMD /app/run.sh
+ENTRYPOINT ["/app/run.sh"]
