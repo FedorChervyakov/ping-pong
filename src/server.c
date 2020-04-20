@@ -201,7 +201,6 @@ parse_options (int argc, char **argv)
 
 conflicting_options:
     fprintf(stderr, "%s: conficting options specified\n", argv[0]);
-    goto exit_failure;
 
 exit_failure:
     fprintf(stderr, "Try '%s -h' for more information.\n", argv[0]);
