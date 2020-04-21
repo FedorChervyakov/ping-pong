@@ -5,6 +5,11 @@
 #ifndef __PINGPONG_H_
 #define __PINGPONG_H_
 
+/* Logging includes */
+#include <string.h>
+#include <errno.h>
+#include "log.h"
+
 /* Version defines */
 #define VERSION_MAJOR @PingPong_VERSION_MAJOR@
 #define VERSION_MINOR @PingPong_VERSION_MINOR@
@@ -18,7 +23,7 @@
 
 /* Handle error macro */
 #define handle_error(msg) \
-    do { perror(msg); exit(EXIT_FAILURE); } while (0)
+    do { log_error("%s: %s", msg, strerror(errno)); exit(EXIT_FAILURE); } while (0)
 
 /* Default Unix socket pathname */
 #define UNIX_SOCKET_PATH "pingpong.sock"
