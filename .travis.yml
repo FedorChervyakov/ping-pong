@@ -6,7 +6,8 @@ os:
     - osx
 
 script:
+    - git submodule update --init --recursive
     - mkdir build
     - cd build
-    - cmake ../src
+    - cmake ..
     - cmake --build .
