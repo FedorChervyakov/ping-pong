@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
 #include <fcntl.h>
 #include <getopt.h>
 
@@ -259,7 +258,7 @@ main (int argc, char **argv)
             hints.ai_next = NULL;
 
             if ((err=getaddrinfo(hostname, service, &hints, &inet_result)) != 0) {
-                fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
+                log_error("getaddrinfo: %s\n", gai_strerror(err));
                 exit(EXIT_FAILURE);
             }
 
@@ -304,7 +303,7 @@ main (int argc, char **argv)
 
     } while (read_cnt > 0);
 
-    printf("%s: Received %s\n", argv[0], recv_buf);
+    log_info("Received %s", recv_buf);
 
     write_cnt = write_cum = 0;
     while ((write_cnt=write(log_fd, recv_buf+write_cum, strlen(recv_buf)-write_cum)) < strlen(recv_buf)-write_cum) {
@@ -317,7 +316,7 @@ main (int argc, char **argv)
     /* Check if message is PING, and reply with PONG */
     write_cnt = write_cum = 0;
     if (strncmp(PING, recv_buf, strlen(PING)) == 0) {
-        printf("%s: Sending %s\n", argv[0], send_buf);
+        log_info("Sending %s", send_buf);
         while ((write_cnt=send(cfd, send_buf+write_cum, strlen(send_buf)-write_cum, 0)) < strlen(send_buf)-write_cum) {
             if (write_cnt == -1)
                 handle_error("write");
