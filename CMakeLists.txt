@@ -5,10 +5,11 @@ set(CMAKE_C_COMPILER gcc)
 project(PingPong VERSION 1.0 LANGUAGES C)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 set(CMAKE_C_FLAGS "-DLOG_USE_COLOR")
 
-add_library(logc STATIC
+add_library(logc SHARED
     "${CMAKE_SOURCE_DIR}/log.c/src/log.c"
 )
 

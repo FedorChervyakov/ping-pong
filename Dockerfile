@@ -21,6 +21,7 @@ ADD ./run.sh .
 
 COPY --from=build /app/build/bin/server .
 COPY --from=build /app/build/bin/client .
+COPY --from=build /app/build/lib/ /usr/lib
 
 ENV SOCKET_PATH /tmp/socket.sock
 ENV LOG_PATH /log/pingpong.log
